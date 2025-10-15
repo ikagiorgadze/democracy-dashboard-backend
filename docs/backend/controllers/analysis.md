@@ -11,7 +11,7 @@
 - Resolves metadata through `getIndexMetaUniversal`, falling back to generic labels when definitions are missing.
 - Retrieves correlation stats via `getCorrelation`. Missing parquet data yields a 404 with `correlation not found`.
 - Builds structured prompts with `buildExplainPrompt`. When `execute` is true, invokes `getOpenAIClient` and caches results in `TTLCache`.
-- Cache keys include indicator codes, country, correlation stats, prompt body, and model name; repeated requests return `{ cached: true }`.
+- Cache keys include  indicator codes, country, correlation stats, prompt body, and model name; repeated requests return `{ cached: true }`.
 
 ## Correlation Listing Workflow
 - Accepts query parameters `country`, `type`, `dataset1`, `dataset2`, `minObservations`, `limit`.
