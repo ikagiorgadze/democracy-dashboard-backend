@@ -1,15 +1,15 @@
-Project audit: 2025-10-15 16:37:00 UTC
+Project audit: 2025-10-15 16:55:55 UTC
 
 Severity counts
 - BLOCKER: 2
-- HIGH: 5
-- MEDIUM: 7
+- HIGH: 6
+- MEDIUM: 8
 - LOW: 1
 
 Type counts
 - security: 3
-- architecture: 2
-- bug: 2
+- architecture: 3
+- bug: 3
 - reliability: 3
 - testing: 5
 
@@ -21,8 +21,10 @@ Type counts
 | request-schema-validation | Introduce schema validation for requests | HIGH | architecture | src/controllers | open | M |
 | analysis-payload-guard | Validate analysis explain payload | HIGH | bug | src/controllers/analysis.controller.ts | open | M |
 | imf-fields-null-guard | Fix IMF request field validation | HIGH | bug | src/controllers/imf.controller.ts | open | S |
+| analysis-correlations-validation | Validate correlations query parameters | HIGH | bug | src/controllers/analysis.controller.ts | open | S |
 | metadata-definition-guard | Guard IMF metadata definition loads | HIGH | reliability | src/services/metadata-universal.service.ts | open | S |
 | express-error-middleware | Install centralized error middleware | MEDIUM | architecture | src/app.ts | open | S |
+| structured-logging | Introduce structured request and error logging | MEDIUM | architecture | src/app.ts | open | M |
 | env-validation | Validate required environment config | MEDIUM | reliability | src/index.ts | open | M |
 | graceful-shutdown | Implement graceful shutdown | MEDIUM | reliability | src/index.ts | open | S |
 | testing-foundation | Establish automated test suite | MEDIUM | testing | repo | open | L |
