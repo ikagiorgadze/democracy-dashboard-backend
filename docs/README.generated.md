@@ -1,7 +1,7 @@
 # Democracy Dashboard Backend Documentation
 
 ## Overview
-The Democracy Dashboard backend is a Node.js/Express service that aggregates democracy-related datasets (V-Dem parquet files, IMF SDMX API) and delivers analytical endpoints for correlation insights and AI-generated narratives. The codebase favors a classic controller/service structure with thin routers and reusable utilities.
+The Democracy Dashboard backend is a Node.js/Express service that aggregates democracy-related datasets (V-Dem parquet files, IMF SDMX API) and delivers analytical endpoints for correlation insights and automated narratives. The codebase favors a classic controller/service structure with thin routers and reusable utilities.
 
 ## Architecture
 ```
@@ -14,7 +14,7 @@ The Democracy Dashboard backend is a Node.js/Express service that aggregates dem
          |
          +-- Controllers
                 |
-                +-- Services (DuckDB, IMF SDMX fetch, metadata, OpenAI)
+                +-- Services (DuckDB, IMF SDMX fetch, metadata, LLM client)
                         |
                         +-- Data files (data/parquets, data/definitions)
                         +-- External APIs (IMF, OpenAI)
@@ -22,7 +22,7 @@ The Democracy Dashboard backend is a Node.js/Express service that aggregates dem
 
 - `src/index.ts` bootstraps environment variables and starts the HTTP listener.
 - Controllers enforce validation and transform service outputs into HTTP responses.
-- Services encapsulate DuckDB parquet queries, IMF network calls, metadata loading, and OpenAI prompt execution.
+- Services encapsulate DuckDB parquet queries, IMF network calls, metadata loading, and language-model prompt execution.
 - Utilities provide shared error handling and an in-memory TTL cache for expensive explain responses.
 
 ## Setup & Local Development
@@ -61,7 +61,7 @@ Full reference: [OpenAPI HTML](../openapi/index.html)
 | POST | `/v-dem/query` | Query V-Dem parquet data by countries, fields, and optional years. |
 | GET | `/imf/health` | IMF service heartbeat. |
 | POST | `/imf/query` | Fetch IMF indicators for selected countries and series. |
-| POST | `/analysis/relationships/explain` | Generate or preview AI explanation for a correlation. |
+| POST | `/analysis/relationships/explain` | Generate or preview a correlation explanation narrative. |
 | GET | `/analysis/relationships/datasets/correlations` | Retrieve ranked correlations across datasets for a country. |
 
 ## Data Model Overview

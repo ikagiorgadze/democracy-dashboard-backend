@@ -141,7 +141,7 @@ paths:
           $ref: '#/components/responses/Error'
   /analysis/relationships/explain:
     post:
-      summary: Generate or preview an AI explanation of correlation
+      summary: Generate or preview a correlation explanation narrative
       operationId: postExplainRelationships
       tags: [Analysis]
       requestBody:
