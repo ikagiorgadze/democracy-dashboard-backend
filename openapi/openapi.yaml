@@ -1,0 +1,493 @@
+openapi: 3.1.0
+info:
+  title: Democracy Dashboard Backend API
+  version: 1.0.0
+  description: >-
+    HTTP API providing democracy datasets (V-Dem, IMF) and analysis tooling for correlations
+    and narrative explanations.
+  license:
+    name: Proprietary
+    url: https://api.democracy-dashboard.org/licenses/backend
+servers:
+  - url: https://api.democracy-dashboard.org
+    description: Production (placeholder)
+  - url: https://dev.democracy-dashboard.org
+    description: Development
+security: []
+paths:
+  /health:
+    get:
+      summary: Global service health check
+      operationId: getGlobalHealth
+      tags: [System]
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /v-dem/health:
+    get:
+      summary: V-Dem service health check
+      operationId: getVdemHealth
+      tags: [V-Dem]
+      responses:
+        '200':
+          description: V-Dem service health result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /v-dem/query:
+    post:
+      summary: Query V-Dem parquet dataset
+      operationId: postVdemQuery
+      tags: [V-Dem]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VdemQueryRequest'
+      responses:
+        '200':
+          description: Filtered V-Dem observations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VdemQueryResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Dataset not found for supplied filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /imf/health:
+    get:
+      summary: IMF service health check
+      operationId: getImfHealth
+      tags: [IMF]
+      responses:
+        '200':
+          description: IMF service health result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /imf/query:
+    post:
+      summary: Query IMF SDMX API for composite series
+      operationId: postImfQuery
+      tags: [IMF]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImfQueryRequest'
+      responses:
+        '200':
+          description: Aggregated IMF observations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImfQueryResponse'
+        '400':
+          description: Invalid request payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '504':
+          description: Upstream IMF timeout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /analysis/relationships/explain:
+    post:
+      summary: Generate or preview an AI explanation of correlation
+      operationId: postExplainRelationships
+      tags: [Analysis]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExplainRequest'
+      responses:
+        '200':
+          description: Prompt preview or generated explanation
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ExplainPreviewResponse'
+                  - $ref: '#/components/schemas/ExplainExecutionResponse'
+        '404':
+          description: Correlation not found for provided filters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Error'
+  /analysis/relationships/datasets/correlations:
+    get:
+      summary: Retrieve ranked dataset correlations for a country
+      operationId: getDatasetCorrelations
+      tags: [Analysis]
+      parameters:
+        - name: country
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Human-readable country label matching parquet directory naming.
+        - name: type
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/CorrelationRankingType'
+        - name: dataset1
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/DatasetCode'
+        - name: dataset2
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/DatasetCode'
+        - name: minObservations
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Minimum observation count (n) to include in results.
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+          description: Optional override for result count (defaults internally).
+      responses:
+        '200':
+          description: Ranked correlation list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrelationsResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        default:
+          $ref: '#/components/responses/Error'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        service:
+          type: string
+          description: Domain identifier when applicable.
+      required:
+        - ok
+    BaseQueryPayload:
+      type: object
+      properties:
+        countries:
+          type: array
+          items:
+            type: string
+        fields:
+          type: array
+          items:
+            type: string
+        start_year:
+          type: integer
+          description: Inclusive start year for the query window.
+        end_year:
+          type: integer
+          description: Inclusive end year for the query window.
+        isNea:
+          type: boolean
+          description: Switch dataset from WEO to ANEA for IMF requests.
+      required:
+        - countries
+        - fields
+    VdemQueryRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseQueryPayload'
+      description: Request body for V-Dem parquet queries. Year bounds default server-side when omitted.
+    VdemRow:
+      type: object
+      properties:
+        country_name:
+          type: string
+        year:
+          type: integer
+      required:
+        - country_name
+        - year
+      additionalProperties:
+        type:
+          - string
+          - number
+          - 'null'
+    VdemQueryResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/VdemRow'
+    ImfQueryRequest:
+      allOf:
+        - $ref: '#/components/schemas/BaseQueryPayload'
+      required:
+        - countries
+        - fields
+        - start_year
+        - end_year
+      description: Request body for IMF SDMX queries. Requires explicit year range.
+    ImfRow:
+      type: object
+      properties:
+        country_name:
+          type: string
+        year:
+          type: integer
+      required:
+        - country_name
+        - year
+      additionalProperties:
+        type:
+          - number
+          - 'null'
+    ImfQueryResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/ImfRow'
+    ExplainIndex:
+      type: object
+      properties:
+        name:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/IndexObservation'
+      required:
+        - name
+    IndexObservation:
+      type: object
+      properties:
+        year:
+          type: integer
+        observation:
+          type: number
+      required:
+        - year
+        - observation
+    ExplainRequest:
+      type: object
+      properties:
+        indexA:
+          $ref: '#/components/schemas/ExplainIndex'
+        indexB:
+          $ref: '#/components/schemas/ExplainIndex'
+        country:
+          type: string
+        execute:
+          type: boolean
+          description: When true, triggers OpenAI execution; otherwise returns prompt preview.
+      required:
+        - indexA
+        - indexB
+        - country
+    IndexMeta:
+      type: object
+      properties:
+        index_code:
+          type: string
+        name:
+          type: string
+        question:
+          type: string
+        definition:
+          type: string
+      required:
+        - index_code
+        - name
+        - question
+        - definition
+    CorrelationSummary:
+      type: object
+      properties:
+        r:
+          type: number
+        n:
+          type: integer
+          minimum: 0
+        method:
+          type: string
+        p_value:
+          type: number
+          minimum: 0
+        yearsCovered:
+          type: array
+          items:
+            type: integer
+          minItems: 2
+          maxItems: 2
+      required:
+        - r
+    ExplainPreviewResponse:
+      type: object
+      properties:
+        prompt:
+          type: string
+        context:
+          type: object
+          properties:
+            indexA:
+              $ref: '#/components/schemas/IndexMeta'
+            indexB:
+              $ref: '#/components/schemas/IndexMeta'
+            country:
+              type: string
+            correlation:
+              anyOf:
+                - $ref: '#/components/schemas/CorrelationSummary'
+                - type: 'null'
+          required:
+            - indexA
+            - indexB
+            - country
+            - correlation
+        model:
+          type: string
+      required:
+        - prompt
+        - context
+        - model
+    ExplainExecutionResponse:
+      type: object
+      properties:
+        explanation:
+          type: string
+        cached:
+          type: boolean
+      required:
+        - explanation
+        - cached
+    DatasetCode:
+      type: string
+      enum: [VDEM, WEO, NEA]
+    CorrelationRankingType:
+      type: string
+      enum:
+        - highest
+        - lowest
+        - strongest
+        - weakest
+        - most_significant
+        - least_significant
+        - most_observations
+        - fewest_observations
+    CorrelationPair:
+      type: object
+      properties:
+        indexA:
+          type: string
+        indexB:
+          type: string
+        r:
+          type: number
+        n:
+          type: integer
+        p_value:
+          type: number
+      required:
+        - indexA
+        - indexB
+        - r
+        - n
+        - p_value
+    CorrelationsResponse:
+      type: object
+      properties:
+        correlations:
+          type: array
+          items:
+            $ref: '#/components/schemas/CorrelationPair'
+      required:
+        - correlations
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        status:
+          type: integer
+        details:
+          description: Additional error context when available.
+          oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+            - type: object
+              additionalProperties: true
+            - type: array
+              items: {}
+            - type: 'null'
+      required:
+        - error
+        - status
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
